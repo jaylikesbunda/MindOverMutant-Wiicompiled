@@ -1,0 +1,343 @@
+diff --git a/nWiiRuntime/CMakeLists.txt b/nWiiRuntime/CMakeLists.txt
+index 72436be..67bae4a 100644
+--- a/nWiiRuntime/CMakeLists.txt
++++ b/nWiiRuntime/CMakeLists.txt
+@@ -57,6 +57,8 @@ add_library(nwiiruntime STATIC
+     src/hw/hw_dsp.cpp
+     src/hw/hw_ai.cpp
+     src/hw/hw_di.cpp
++    src/hw/hw_si.cpp
++    src/hw/hw_exi.cpp
+     src/hw/hw_ipc.cpp
+     src/hw/hw_all.cpp
+     src/hw/hw_cp.cpp
+diff --git a/nWiiRuntime/include/runtime/hw/hw.h b/nWiiRuntime/include/runtime/hw/hw.h
+index 53cf3e7..2b04698 100644
+--- a/nWiiRuntime/include/runtime/hw/hw.h
++++ b/nWiiRuntime/include/runtime/hw/hw.h
+@@ -45,6 +45,8 @@ void register_vi(MMIODispatcher &dispatcher);
+ void register_dsp(MMIODispatcher &dispatcher);
+ void register_ai(MMIODispatcher &dispatcher);
+ void register_di(MMIODispatcher &dispatcher);
++void register_si(MMIODispatcher &dispatcher);
++void register_exi(MMIODispatcher &dispatcher);
+ void register_ipc(MMIODispatcher &dispatcher);
+ 
+ void register_all_hw(MMIODispatcher &dispatcher);
+diff --git a/nWiiRuntime/src/hw/hw_all.cpp b/nWiiRuntime/src/hw/hw_all.cpp
+index 8f9e5c7..df9035b 100644
+--- a/nWiiRuntime/src/hw/hw_all.cpp
++++ b/nWiiRuntime/src/hw/hw_all.cpp
+@@ -16,10 +16,16 @@ extern void register_cp(MMIODispatcher &dispatcher);
+ //
+ // Measured on Mario Party 7: si, exi and mi carried nothing -- the game runs
+ // unchanged without them, and input does not go through SI at all because
+-// PADRead is served at the seam straight from InputManager. Those three are
+-// gone. cp, pi, pe, vi, dsp, ai and di are still load-bearing: the SDK reaches
+-// their registers from inside its own routines, so they can only be dropped
+-// once the SDK functions above them are served at the seam.
++// PADRead is served at the seam straight from InputManager. mi is still gone.
++// si and exi are back for Crash: Mind over Mutant, whose 2008 SDK reaches the
++// 0x0D00xxxx aliases of the SI poll/COM/status/buffer registers
++// (0x0D006430..0x0D006480) and of the EXI channel status/DMA registers
++// (0x0D006800..0x0D006834) during hardware init. Without them the runtime
++// logged those accesses as "[MMIO] Unhandled" and returned 0
++// (logs/boot-before-stbux.log). cp, pi, pe, vi, dsp, ai and di are still
++// load-bearing: the SDK reaches their registers from inside its own routines,
++// so they can only be dropped once the SDK functions above them are served at
++// the seam.
+ static bool skipped(const char *name) {
+   static const char *list = std::getenv("NWII_NOHW");
+   if (!list) return false;
+@@ -52,6 +58,8 @@ void register_all_hw(MMIODispatcher &dispatcher) {
+   NWII_HW_BLOCK(dsp);
+   NWII_HW_BLOCK(ai);
+   NWII_HW_BLOCK(di);
++  NWII_HW_BLOCK(si);
++  NWII_HW_BLOCK(exi);
+   NWII_HW_BLOCK(ipc);
+ #undef NWII_HW_BLOCK
+ }
+diff --git a/nWiiRuntime/src/hw/hw_di.cpp b/nWiiRuntime/src/hw/hw_di.cpp
+index ffc02a7..9f0aade 100644
+--- a/nWiiRuntime/src/hw/hw_di.cpp
++++ b/nWiiRuntime/src/hw/hw_di.cpp
+@@ -173,45 +173,58 @@ static void di_execute() {
+ }
+ 
+ void register_di(MMIODispatcher& dispatcher) {
+-    dispatcher.register_region(0xCC006000, 0xCC0060FF,
+-        [](uint32_t addr) -> uint32_t {
+-            if (addr == 0xCC006000) return di_sr;
+-            if (addr == 0xCC006004) return di_cvr; 
+-            if (addr == 0xCC006008) return di_cmd[0];
+-            if (addr == 0xCC00600C) return di_cmd[1];
+-            if (addr == 0xCC006010) return di_cmd[2];
+-            if (addr == 0xCC006014) return di_mar;
+-            if (addr == 0xCC006018) return di_len;
+-            if (addr == 0xCC00601C) return di_cr;
+-            if (addr == 0xCC006020) return di_imm;
+-            if (addr == 0xCC006024) return 0x000000FF; 
+-            return 0;
+-        },
+-        [](uint32_t addr, uint32_t val) {
+-            if (addr == 0xCC006000) {
+-                if (std::getenv("NWII_SAMPLE")) std::cout << "[HW DI] Write to di_sr: 0x" << std::hex << val << std::dec << "\n";
+-                
+-                uint32_t w1c = val & (SR_BRK | SR_DEINT | SR_TCINT);
+-                uint32_t masks = SR_DEINTMASK | SR_TCINTMASK | SR_BRKINTMASK;
+-                di_sr = ((di_sr & ~w1c) & ~masks) | (val & masks);
+-                di_update_interrupt();
+-            } else if (addr == 0xCC006004) {
+-                uint32_t w1c = val & CVR_CVRINT;
+-                di_cvr = ((di_cvr & ~w1c) & ~CVR_CVRINTMASK) | (val & CVR_CVRINTMASK);
+-                di_update_interrupt();
+-            }
+-            else if (addr == 0xCC006008) { di_cmd[0] = val; }
+-            else if (addr == 0xCC00600C) { di_cmd[1] = val; }
+-            else if (addr == 0xCC006010) { di_cmd[2] = val; }
+-            else if (addr == 0xCC006014) { di_mar = val; }
+-            else if (addr == 0xCC006018) { di_len = val; }
+-            else if (addr == 0xCC00601C) {
+-                di_cr = val;
+-                if (val & 1) di_execute();
+-            }
+-            else if (addr == 0xCC006020) { di_imm = val; }
++    auto read32 = [](uint32_t addr) -> uint32_t {
++        switch (addr & 0xFFFF) {
++        case 0x6000: return di_sr;
++        case 0x6004: return di_cvr;
++        case 0x6008: return di_cmd[0];
++        case 0x600C: return di_cmd[1];
++        case 0x6010: return di_cmd[2];
++        case 0x6014: return di_mar;
++        case 0x6018: return di_len;
++        case 0x601C: return di_cr;
++        case 0x6020: return di_imm;
++        case 0x6024: return 0x000000FF; // DI_CONFIG: drive present
++        default: return 0;
++        }
++    };
++    auto write32 = [](uint32_t addr, uint32_t val) {
++        switch (addr & 0xFFFF) {
++        case 0x6000: {
++            if (std::getenv("NWII_SAMPLE")) std::cout << "[HW DI] Write to di_sr: 0x" << std::hex << val << std::dec << "\n";
++            uint32_t w1c = val & (SR_BRK | SR_DEINT | SR_TCINT);
++            uint32_t masks = SR_DEINTMASK | SR_TCINTMASK | SR_BRKINTMASK;
++            di_sr = ((di_sr & ~w1c) & ~masks) | (val & masks);
++            di_update_interrupt();
++            break;
++        }
++        case 0x6004: {
++            uint32_t w1c = val & CVR_CVRINT;
++            di_cvr = ((di_cvr & ~w1c) & ~CVR_CVRINTMASK) | (val & CVR_CVRINTMASK);
++            di_update_interrupt();
++            break;
++        }
++        case 0x6008: di_cmd[0] = val; break;
++        case 0x600C: di_cmd[1] = val; break;
++        case 0x6010: di_cmd[2] = val; break;
++        case 0x6014: di_mar = val; break;
++        case 0x6018: di_len = val; break;
++        case 0x601C:
++            di_cr = val;
++            if (val & 1) di_execute();
++            break;
++        case 0x6020: di_imm = val; break;
++        default: break;
+         }
+-    );
++    };
++    // DI_MIRROR_V1: Crash: Mind over Mutant addresses DI through the uncached
++    // 0x0D00xxxx alias -- logs/boot-before-stbux.log records "read32 at
++    // 0x0d006024" (DI_CONFIG) as [MMIO] Unhandled and returning 0. 0xCC00xxxx
++    // is the current base and 0x0C/0xCD are its cached/uncached aliases, the
++    // same four bases hw_ai.cpp registers. The command/DMA path (di_execute,
++    // di_update_interrupt) is unchanged; only the window is widened.
++    for (uint32_t base : {0xCC000000u, 0xCD000000u, 0x0C000000u, 0x0D000000u})
++        dispatcher.register_region(base + 0x6000, base + 0x60FF, read32, write32);
+ }
+ 
+ } 
+diff --git a/nWiiRuntime/src/hw/hw_exi.cpp b/nWiiRuntime/src/hw/hw_exi.cpp
+new file mode 100644
+index 0000000..1752a61
+--- /dev/null
++++ b/nWiiRuntime/src/hw/hw_exi.cpp
+@@ -0,0 +1,102 @@
++// Native EXI (Expansion Interface) register model.
++//
++// Crash: Mind over Mutant addresses EXI through the uncached 0x0D00xxxx alias;
++// logs/boot-before-stbux.log records 0x0D006800 (STATUS), 0x0D006804 (DMA
++// address), 0x0D006808 (DMA length), 0x0D00680C (DMA control) and 0x0D006810
++// (IMM data) for channel 0, 0x0D006814/0x0D006820 for channel 1 and
++// 0x0D006828/0x0D006834 for channel 2 as "[MMIO] Unhandled". The runtime only
++// registered no EXI range at all, and hw_all.cpp's "exi carried nothing" note
++// was measured on a 2006 game (Mario Party 7).
++//
++// Each channel spans 0x14 bytes (Dolphin CEXIChannel):
++//   +0x00 EXI_STATUS  +0x04 EXI_DMA_ADDRESS  +0x08 EXI_DMA_LENGTH
++//   +0x0C EXI_DMA_CONTROL  +0x10 EXI_IMM_DATA
++//
++// With no expansion device fitted, EXT (bit 12) reads 0, and
++// EXIINT/TCINT/EXTINT are never latched. A DMA/immediate transfer is modelled
++// as completing immediately: TSTART is write-one-to-start and reads back 0.
++// No PI line is driven from here -- the runtime has no EXI device behind these
++// registers, so asserting an interrupt would be inventing one. Reads report
++// the idle / no-device state and writes are recorded instead of dropped.
++#include "runtime/hw/hw.h"
++#include <cstdint>
++
++namespace nwii::runtime::hw {
++
++namespace {
++constexpr uint32_t kExiChannels = 3;
++constexpr uint32_t kExiChannelSize = 0x14;
++constexpr uint32_t kExiRegsPerChannel = kExiChannelSize / 4; // STATUS..IMM_DATA
++constexpr uint32_t kExiInvalid = 0xFFFFFFFFu;
++
++// EXI_STATUS bit fields (Dolphin UEXI_STATUS).
++constexpr uint32_t kStatusExiIntMask = 0x00000001u;
++constexpr uint32_t kStatusTcIntMask = 0x00000004u;
++constexpr uint32_t kStatusClk = 0x00000070u;
++constexpr uint32_t kStatusChipSelect = 0x00000380u;
++constexpr uint32_t kStatusExtIntMask = 0x00000400u;
++constexpr uint32_t kStatusExt = 0x00001000u; // read-only: external device present
++constexpr uint32_t kStatusRomDis = 0x00002000u;
++
++constexpr uint32_t kControlTStart = 0x00000001u;
++
++static uint32_t exi_reg[kExiChannels * kExiRegsPerChannel] = {};
++
++// off is the byte offset within the 0x6800 window (0x00..0xFF).
++uint32_t exi_index(uint32_t off) {
++  uint32_t channel = off / kExiChannelSize;
++  uint32_t reg = (off % kExiChannelSize) / 4;
++  if (channel >= kExiChannels || reg >= kExiRegsPerChannel)
++    return kExiInvalid;
++  return channel * kExiRegsPerChannel + reg;
++}
++} // namespace
++
++void register_exi(MMIODispatcher &dispatcher) {
++  auto read = [](uint32_t addr) -> uint32_t {
++    uint32_t off = (addr & 0xFF) & ~3u;
++    uint32_t index = exi_index(off);
++    if (index == kExiInvalid)
++      return 0;
++    if (off % kExiChannelSize == 0)
++      return exi_reg[index] & ~kStatusExt; // EXT: no external device present
++    return exi_reg[index];
++  };
++  auto write = [](uint32_t addr, uint32_t value) {
++    uint32_t off = (addr & 0xFF) & ~3u;
++    uint32_t index = exi_index(off);
++    if (index == kExiInvalid)
++      return;
++    uint32_t channel = off / kExiChannelSize;
++    uint32_t reg = (off % kExiChannelSize) / 4;
++    switch (reg) {
++      case 0: { // EXI_STATUS
++        // Writable: interrupt masks, CLK, CHIP_SELECT, and per-channel
++        // EXTINTMASK (channels 0/1) / ROMDIS (channel 0). EXIINT, TCINT and
++        // EXTINT are write-one-to-clear and are never set here; EXT is
++        // read-only and always 0 (no device).
++        uint32_t status = value & (kStatusExiIntMask | kStatusTcIntMask |
++                                   kStatusClk | kStatusChipSelect);
++        if (channel < 2)
++          status |= value & kStatusExtIntMask;
++        if (channel == 0)
++          status |= value & kStatusRomDis;
++        exi_reg[index] = status;
++        break;
++      }
++      case 3: // EXI_DMA_CONTROL: TSTART self-clears, transfer completes.
++        exi_reg[index] = value & ~kControlTStart;
++        break;
++      default: // DMA address / length / IMM data are plain storage.
++        exi_reg[index] = value;
++        break;
++    }
++  };
++  // EXI_MIRROR_V1: the register file is visible through the cached and uncached
++  // aliases of both the 0xCC00xxxx and 0xCD00xxxx windows; the same four-base
++  // loop hw_ai.cpp uses.
++  for (uint32_t base : {0xCC000000u, 0xCD000000u, 0x0C000000u, 0x0D000000u})
++    dispatcher.register_region(base + 0x6800, base + 0x68FF, read, write);
++}
++
++} // namespace nwii::runtime::hw
+diff --git a/nWiiRuntime/src/hw/hw_si.cpp b/nWiiRuntime/src/hw/hw_si.cpp
+new file mode 100644
+index 0000000..5291df1
+--- /dev/null
++++ b/nWiiRuntime/src/hw/hw_si.cpp
+@@ -0,0 +1,68 @@
++// Native SI (Serial Interface) register model.
++//
++// Crash: Mind over Mutant addresses SI through the uncached 0x0D00xxxx alias;
++// logs/boot-before-stbux.log records 0x0D006430 (SI_POLL), 0x0D006434
++// (SI_COM_CSR), 0x0D006438 (SI_STATUS) and 0x0D006480 (SI_IO_BUFFER) as
++// "[MMIO] Unhandled", all read back as 0. The runtime only registered the
++// 0xCC00xxxx base, and hw_all.cpp's "si carried nothing" note was measured on
++// a 2006 game (Mario Party 7) that never touched these registers.
++//
++// Offsets follow the hardware block (Dolphin SerialInterface):
++//   0x00..0x2F  four channels of OUT / IN_HI / IN_LO at 0x0C stride
++//   0x30        SI_POLL
++//   0x34        SI_COM_CSR
++//   0x38        SI_STATUS
++//   0x3C        SI_EXI_CLOCK_COUNT
++//   0x80..0xFF  128-byte SI I/O buffer
++//
++// No controller/memory-card device is attached, so a transfer is modelled as
++// completing immediately: TSTART is write-one-to-start and reads back 0.
++// TCINT / RDSTINT are write-one-to-clear storage and are never latched, and no
++// PI line is driven from here -- the runtime has no backing SI device, so
++// asserting an interrupt would be inventing one. Reads therefore report the
++// idle / no-device state, and writes are recorded instead of dropped.
++#include "runtime/hw/hw.h"
++#include <cstdint>
++
++namespace nwii::runtime::hw {
++
++// One word per register covers the whole 0x100 window including the buffer.
++static uint32_t si_reg[0x100 / 4] = {};
++
++void register_si(MMIODispatcher &dispatcher) {
++  auto read = [](uint32_t addr) -> uint32_t {
++    uint32_t off = (addr & 0xFF) & ~3u;
++    switch (off) {
++      case 0x34: // SI_COM_CSR: TSTART is write-only; reads see transfer complete.
++        return si_reg[off / 4] & ~1u;
++      default:
++        return si_reg[off / 4];
++    }
++  };
++  auto write = [](uint32_t addr, uint32_t value) {
++    uint32_t off = (addr & 0xFF) & ~3u;
++    switch (off) {
++      case 0x34: // SI_COM_CSR: TSTART self-clears; TCINT/RDSTINT are W1C.
++        si_reg[off / 4] = value & ~1u;
++        break;
++      case 0x38: { // SI_STATUS: UNRUN/OVRUN/COLL/NOREP are W1C, WR self-clears.
++        uint32_t status = si_reg[off / 4];
++        status &= ~(value & 0x0F0F0F0Fu);
++        status &= ~0x80000000u;
++        si_reg[off / 4] = status;
++        break;
++      }
++      default:
++        si_reg[off / 4] = value;
++        break;
++    }
++  };
++  // SI_MIRROR_V1: the register file is visible through the cached and uncached
++  // aliases of both the 0xCC00xxxx and 0xCD00xxxx windows; the same four-base
++  // loop hw_ai.cpp uses. (Through the MMU the 0x0C/0xCD aliases normalise to
++  // 0xCC/0x0D, but registering all four keeps this independent of that path.)
++  for (uint32_t base : {0xCC000000u, 0xCD000000u, 0x0C000000u, 0x0D000000u})
++    dispatcher.register_region(base + 0x6400, base + 0x64FF, read, write);
++}
++
++} // namespace nwii::runtime::hw

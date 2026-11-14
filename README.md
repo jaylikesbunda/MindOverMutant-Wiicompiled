@@ -1,0 +1,118 @@
+<div align="center">
+  <img src="launcher/ui/images/wiicomp.png" width="280" alt="WiiComp">
+  <h1>Crash: Mind over Mutant</h1>
+  <p>A static recompilation of the Wii version into a native Windows game.</p>
+  <p>
+    <a href="../../releases/latest"><img src="https://img.shields.io/badge/Download-Launcher-8053ba?style=for-the-badge&logo=windows11&logoColor=white" alt="Download the launcher"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/Licence-Non--commercial-555?style=for-the-badge" alt="Licence: non-commercial"></a>
+  </p>
+</div>
+
+> [!IMPORTANT]
+> The game is not included. You need your own Wii disc image of **Crash: Mind over Mutant**, PAL (`RC8P7D`).
+> The launcher builds the game on your PC from your disc; no game code or data is distributed.
+
+The game's PowerPC code is translated to C++ with [NWiiRecomp](https://github.com/BlackLineInteractive/NWiiRecomp)
+and compiled with a high-level Wii runtime. Launcher `0.1.0` is a release candidate. See [CHANGELOG.md](CHANGELOG.md).
+
+| Release | Disc ID | Status |
+| --- | --- | --- |
+| PAL | `RC8P7D` | Supported |
+| Other regions and revisions | — | Not supported |
+
+The launcher checks the executable's SHA-256 against [the supported disc hash](data/main.dol.sha256).
+
+## Features
+
+- **Controls.** Per-player layouts, keyboard and mouse, gamepad pointer, motion and supported-controller gyro. Changes apply during play.
+- **Button prompts.** Xbox, PlayStation and keyboard/mouse glyphs follow player 1's bindings. Automatic mode follows the last input device; original Wii prompts are also available.
+- **Save states.** F1 snapshots the game; the Save states page resumes or deletes snapshots.
+- **Area selection.** The Episodes page selects MoM's areas, L0–L9. Normal Play restores the original startup. These are area entry points, not story-mission checkpoints.
+- **Soundtrack.** Play music and ambience from your disc and export tracks as WAV.
+- **Display.** 1x–4x internal resolution, anisotropic filtering, borderless fullscreen, 16:9, six languages, custom frame limits and a persistent shader cache.
+- **Discs.** ISO, WBFS, RVZ, WIA, CISO and GCZ. Disc images remain unchanged.
+- **Local builds.** The installer bundles the source builder and toolchain. Saves, settings and shader caches survive rebuilds.
+
+## Performance
+
+The busy gameplay scene measured roughly 75–79 FPS from a fresh source build and about 92 FPS with a locally trained PGO build,
+using GPU vertices and persistent uploads. These are separate development runs with two-second up/down movement, not a paired benchmark
+or a minimum-performance guarantee. PGO profiles are specific to the generated code and are not included in builder packs.
+
+## Requirements
+
+| Component | Requirement |
+| --- | --- |
+| OS | Windows 10 or 11, 64-bit |
+| CPU | x86-64-v3, including AVX2 and FMA |
+| GPU | OpenGL 3.3 |
+| Memory | 16 GB for building locally |
+| Disk | 15 GB free for the build, plus your disc image and extracted files; SSD recommended |
+
+## Quick start
+
+1. Install `MoMLauncher-<version>-windows-x64-setup.exe` from [Releases](../../releases).
+2. Choose your disc image and prepare the game files.
+3. Select **Start build**. The first build takes tens of minutes.
+4. Select **Play**.
+
+Before the first release, installer candidates are available from manual runs of the [Release workflow](../../actions/workflows/release.yml).
+
+Keys: **F1** save state, **F11** fullscreen. Saves, states, settings and shader caches are stored under
+`%APPDATA%/net.ghostesp.mom-launcher/profile/`.
+
+## Known limitations
+
+Only the PAL disc above is qualified. CotT's camera smoothing, precise frame-pacing switch, compact-command switch and adaptive-batching
+controls are not implemented in MoM. GPU vertex processing, batching and threaded rendering are already present.
+
+Action prompts are replaced on the host GPU; motion illustrations and directional icons keep their original artwork.
+Audio playback has been checked, but saving during an active mix and loading that new snapshot still needs validation.
+
+<details>
+<summary><b>Building from source</b></summary>
+
+Needs Python 3.12+, Git, WinLibs GCC 16 POSIX/UCRT with CMake and Ninja, and Rust/Tauri 2 for the launcher.
+Put `mingw64/bin` on PATH. See [vendor/README.md](vendor/README.md) for pinned dependencies.
+
+```powershell
+git clone https://github.com/BlackLineInteractive/NWiiRecomp.git vendor/NWiiRecomp
+git -C vendor/NWiiRecomp checkout --detach 595f176f1d24cc54ff2e8389feed12d7fb553cc2
+```
+
+Extract your disc separately, with `<game>/sys/main.dol` present. Build the game in a new directory:
+
+```powershell
+python tools/clean_room_build.py --dest build/local --dol '<game>/sys/main.dol' --jobs 5
+build/local/storage/toolchain/CrashNative.exe '<game>' config.toml
+```
+
+The builder copies the required runtime DLLs alongside the executable. `--generate-only` stops after guest-source staging;
+`--deps <directory>` uses local SDL2, toml++ and glad sources. No CotT or decompilation checkout is required.
+
+Build a launcher installer, including the offline source builder:
+
+```powershell
+python tools/builder_revision.py
+python tools/make_builder_pack.py --mingw '<winlibs>/mingw64'
+python tools/check_builder_pack.py
+cd launcher/src-tauri
+cargo test --locked --release --lib
+cargo tauri build --config tauri.bundle.conf.json
+```
+
+The [release workflow](.github/workflows/release.yml) follows the same path and verifies the installed pack.
+Manual runs upload candidates. A tag matching the Cargo and Tauri version, such as `v0.1.0`, publishes a release;
+a tag containing a hyphen is a prerelease. See [CONTRIBUTING.md](CONTRIBUTING.md) for source and builder updates.
+
+</details>
+
+## Credits and legal
+
+Built on [NWiiRecomp](https://github.com/BlackLineInteractive/NWiiRecomp) by Volodymyr Vovchok / BlackLine Interactive,
+with runtime and launcher work adapted from Crash of the Titans WiiComp and audio code adapted from
+[Dolphin](https://github.com/dolphin-emu/dolphin). Third-party licences and provenance are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Unofficial fan project, not affiliated with or endorsed by any rights holder. Crash Bandicoot, Mind over Mutant and related names
+and artwork belong to their owners. Non-commercial use only under [LICENSE](LICENSE), which does not cover game code, data,
+generated guest code, disc images, saves or game artwork. Game title art is composed locally from the player's disc.

@@ -1,0 +1,41 @@
+# Runtime profile for Crash: Mind over Mutant (Wii, RC8P7D).
+#
+#   export\build\MindOverMutant.exe dump config.toml
+#
+# [hle] values are game-specific addresses inside main.dol. They are derived from
+# Mind over Mutant's own code here; the Crash of the Titans numbers
+# (0x803B9574 / 0x2950) point at different locations in this binary and must not
+# be copied.
+#   ext_interrupt_dispatch = __OSDispatchInterrupt at 0x8048F80C
+#     Matched from CotT 0x803B9574 (same 0x2A4 size, byte-identical head) and
+#     confirmed by signature-database locality: __OSUnmaskInterrupts 0x8048F78C
+#     immediately precedes it inside OSInterrupt.o.
+#   sched_lock_offset = 0x4218
+#     Displacement magnitude of the scheduler-disable counter read and written by
+#     the pair at 0x80491F94 / 0x80491FD0: lwz/stw -0x4218(r13), i.e. the counter
+#     at 0x805D5CA8 with _SDA2_BASE_ = 0x805D9EC0.
+[system]
+platform = "Wii"
+[game]
+id = "RC8P7D"
+[graphics]
+backend = "OpenGL"
+resolution_scale = 2
+window_width = 960
+window_height = 720
+vsync = true
+[input]
+mode = 6
+[hle]
+# ext_interrupt_dispatch is deliberately NOT set for this game.
+#
+# With it set, the runtime longjmps the guest into __OSDispatchInterrupt
+# (0x8048F80C) on every pending source. This game's dispatcher then computes
+# r3 = pending & ~(its own OS-level mask) and returns WITHOUT acknowledging the
+# hardware source, while the runtime keeps re-raising it at the PI level where
+# INTMR says it is enabled. Runtime mask and guest mask disagree, and the result
+# is a dispatch storm (~875/s). Without it, the runtime takes the direct path:
+# it maps the source to an SDK interrupt number, calls the guest's handler from
+# the interrupt table at 0x80003040, and clears the bit itself.
+# sched_lock_offset (0x4218) is still used and stays.
+sched_lock_offset = 0x4218

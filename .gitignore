@@ -1,0 +1,76 @@
+# Extracted game data (shared by junction with the - DECOMP tree) and the DOL
+dump/
+orig/
+
+# Vendored upstream source: a pinned checkout, never committed, applied patches
+# are kept as files in patches/ instead
+/vendor/*
+!/vendor/README.md
+
+# Build output and generated code (regenerate with tools/; see README.md)
+build/
+export/
+logs/
+__pycache__/
+*.pyc
+*.obj
+*.o
+*.a
+*.exe
+
+# Disc formats, guest-derived files and local play data.
+*.iso
+*.wbfs
+*.rvz
+*.wia
+*.ciso
+*.gcz
+*.dol
+*.rel
+*.rcf
+*.nwstate
+*.partial
+*.gcda
+*.gcno
+/nand/
+/savestates/
+/shader_cache/
+/dist/
+/release-work/
+*.dll
+*.bmp
+*.wav
+*.log
+*.dmp
+
+# Launcher build products and assembled redistribution tools.
+/launcher/src-tauri/target/
+/launcher/src-tauri/gen/
+/launcher/src-tauri/builder-pack/
+**/node_modules/
+
+# Local snapshots written by development stages.
+/overlays/*-before*
+/overlays/*_baseline.*
+
+# Game saves, reversible resource edits and private reference files.
+*.sav
+*.dtm
+*.raw
+*.episodes
+*.direct
+*.prompts
+/game/
+/reference/user/
+/reports/
+/preservation/
+*.pdb
+*.ll
+*.bc
+
+# Editors and OS files.
+.vs/
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini

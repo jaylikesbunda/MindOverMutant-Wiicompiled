@@ -1,0 +1,18 @@
+# Static recompilation settings for Crash: Mind over Mutant (Wii, RC8P7D).
+#
+#   build\nwiirecomp\nWiiRecomp\nwiirecomp.exe recomp_config.toml   # generate export\
+#   export\build\MindOverMutant.exe dump\files                      # build/run the port
+#
+# NWiiRecomp is vendored at the revision the Crash of the Titans port pins;
+# vendor\NWiiRecomp is upstream code and must stay pristine.
+project_name = "MindOverMutant"
+# Game dir layout expected by NWiiRecomp: <dir>/sys/main.dol and <dir>/files/<FST>,
+# which is what `wit extract` produces (the extraction is shared with the
+# - DECOMP tree through a junction at dump/).
+input_game_dir = "dump"
+output_dir = "export"
+runtime_source_dir = "vendor/NWiiRecomp/nWiiRuntime"
+split_output = true
+instructions_per_file = 20000
+
+sdk_sigdb = "vendor/NWiiRecomp/third_party/dolphin-sigdb/totaldb.dsy"

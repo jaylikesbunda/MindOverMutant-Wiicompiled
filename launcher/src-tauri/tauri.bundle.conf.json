@@ -1,0 +1,21 @@
+{
+  "bundle": {
+    "active": true,
+    "category": "Game",
+    "shortDescription": "Build and play Crash: Mind over Mutant from your own Wii disc",
+    "licenseFile": "../../LICENSE",
+    "targets": [
+      "nsis"
+    ],
+    "resources": [
+      "builder-pack/**/*"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "compression": "lzma",
+        "installerIcon": "icons/icon.ico"
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+# WPAD HLE hook addresses: Crash of the Titans -> Crash: Mind over Mutant.
+#
+# These are the guest functions that nWiiRuntime/src/hle/ios.cpp HLEs to provide
+# Wii Remote input, plus the entry set nWiiRecomp/src/recompiler.cpp classifies
+# as native_wpad_entry. The CotT values in patches/nwii-native-runtime.patch are
+# meaningless in MoM, so they are re-keyed to these.
+#
+# Derivation (repeatable, no guessing):
+#   * nine pairs come from tools/analysis/crossmatch.py (shape-identical, same
+#     size): they all share the shift +0xB897C, i.e. the WPAD block is the same
+#     object laid out contiguously in both games;
+#   * 0x803EC730 is four bytes larger in MoM (176 -> 180), which moves the rest
+#     of the block to +0xB8980;
+#   * every address below lands on a function start in MoM's Ghidra index whose
+#     first instruction word is identical to CotT's, and every size matches
+#     except the one noted.
+#
+# columns: cott_addr  mom_addr  cott_size  mom_size  shift  evidence
+0x803EC364	0x804A4CE0	216	216	0xB897C	crossmatch(skeleton); head word and size identical
+0x803EC524	0x804A4EA0	140	140	0xB897C	crossmatch(skeleton); head word and size identical
+0x803EC5B0	0x804A4F2C	104	104	0xB897C	crossmatch(skeleton_multi); head word and size identical
+0x803EC618	0x804A4F94	104	104	0xB897C	block shift; head word and size identical
+0x803EC680	0x804A4FFC	104	104	0xB897C	block shift; head word and size identical
+0x803EC6E8	0x804A5064	72	72	0xB897C	crossmatch(skeleton); head word and size identical
+0x803EC730	0x804A50AC	176	180	0xB897C	head word identical, function is 4 bytes larger in MoM
+0x803EC7E0	0x804A5160	100	100	0xB8980	crossmatch(skeleton); head word and size identical
+0x803EC898	0x804A5218	544	544	0xB8980	crossmatch(skeleton); head word and size identical
+0x803ECE80	0x804A5800	416	416	0xB8980	crossmatch(skeleton); head word and size identical
+0x803ED020	0x804A59A0	380	380	0xB8980	crossmatch(skeleton); head word and size identical
+0x803EEE98	0x804A7818	68	68	0xB8980	block shift; head word and size identical
+0x803EEF0C	0x804A788C	4220	4220	0xB8980	crossmatch(skeleton); head word and size identical

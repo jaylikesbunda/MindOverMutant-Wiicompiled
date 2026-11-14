@@ -1,0 +1,107 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  CRASH_EMBED_RUNTIME: '0'
+  PYTHONUTF8: '1'
+jobs:
+  installer:
+    permissions:
+      contents: write
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify builder identity
+        run: python tools/builder_revision.py
+      - name: Check publication inputs
+        run: python tools/check_release.py
+      - name: Test builder execution
+        run: python -m unittest discover -s tools/tests -p test_builder_execution.py
+      - name: Validate release version
+        id: version
+        shell: pwsh
+        run: |
+          $version = (Get-Content launcher/src-tauri/tauri.conf.json | ConvertFrom-Json).version
+          if ($env:GITHUB_REF -like 'refs/tags/*' -and $env:GITHUB_REF_NAME -ne "v$version") { throw "tag must match launcher version v$version" }
+          "value=$version" >> $env:GITHUB_OUTPUT
+      - name: Fetch pinned upstream source
+        run: |
+          git clone https://github.com/BlackLineInteractive/NWiiRecomp.git vendor/NWiiRecomp
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git -C vendor/NWiiRecomp checkout --detach 595f176f1d24cc54ff2e8389feed12d7fb553cc2
+      - name: Fetch the pinned build toolchain
+        shell: pwsh
+        run: |
+          $url = 'https://github.com/brechtsanders/winlibs_mingw/releases/download/16.1.0posix-14.0.0-ucrt-r2/winlibs-x86_64-posix-seh-gcc-16.1.0-mingw-w64ucrt-14.0.0-r2.zip'
+          $zip = Join-Path $env:RUNNER_TEMP 'winlibs.zip'
+          Invoke-WebRequest $url -OutFile $zip
+          if ((Get-FileHash $zip -Algorithm SHA256).Hash.ToLower() -ne '78eff1e2e804b6a6320c713f084b8f820c662104a24cea6a3bfcab82032bdd60') { throw 'WinLibs checksum differs from pin' }
+          Expand-Archive $zip -DestinationPath (Join-Path $env:RUNNER_TEMP 'winlibs')
+          python tools/make_builder_pack.py --mingw (Join-Path $env:RUNNER_TEMP 'winlibs/mingw64')
+      - name: Verify builder pack
+        run: python tools/check_builder_pack.py
+      - name: Test live prompt texture matching
+        run: python tools/check_live_prompts_mom.py --compiler launcher/src-tauri/builder-pack/toolchain/mingw64/bin/g++.exe
+      - name: Check pruned SDL2 with packaged compiler
+        shell: pwsh
+        run: |
+          $pack = (Resolve-Path launcher/src-tauri/builder-pack).Path
+          $env:PATH = "$pack/toolchain/mingw64/bin;$env:PATH"
+          $env:CC = "$pack/toolchain/mingw64/bin/gcc.exe"
+          $env:CXX = "$pack/toolchain/mingw64/bin/g++.exe"
+          & "$pack/toolchain/mingw64/bin/cmake.exe" -S "$pack/deps/sdl2-src" -B "$env:RUNNER_TEMP/sdl-configure" -G Ninja -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TEST_LIBRARY=OFF
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: launcher/src-tauri
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version 2.11.1 --locked
+      - name: Test launcher against packaged builder
+        working-directory: launcher/src-tauri
+        run: cargo test --locked --release --lib
+      - name: Build installer
+        working-directory: launcher/src-tauri
+        run: cargo tauri build --config tauri.bundle.conf.json
+      - name: Collect and verify installer candidate
+        shell: pwsh
+        run: |
+          python tools/package_source.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $setups = @(Get-ChildItem launcher/src-tauri/target/release/bundle/nsis/*.exe)
+          if ($setups.Count -ne 1) { throw 'expected exactly one installer' }
+          $setup = $setups[0]
+          Copy-Item $setup.FullName 'dist/MoMLauncher-${{ steps.version.outputs.value }}-windows-x64-setup.exe'
+          $installed = Start-Process -FilePath $setup.FullName -ArgumentList '/S' -WindowStyle Hidden -Wait -PassThru
+          if ($installed.ExitCode -ne 0) { throw 'silent install failed' }
+          $product = (Get-Content launcher/src-tauri/tauri.conf.json | ConvertFrom-Json).productName
+          python tools/check_builder_pack.py (Join-Path $env:LOCALAPPDATA "$product/builder-pack")
+          if ($LASTEXITCODE -ne 0) { throw 'installed builder pack is incomplete' }
+          $pack = Join-Path $env:LOCALAPPDATA "$product/builder-pack"
+          $env:PYTHONHOME = Join-Path $pack 'toolchain/python'
+          $env:PATH = "$pack/toolchain/mingw64/bin;$pack/toolchain/python;$env:PATH"
+          Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
+          & "$pack/toolchain/python/python.exe" -X utf8 "$pack/native-builder/tools/builder_revision.py"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$pack/toolchain/mingw64/bin/g++.exe" --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem dist -File | Where-Object Name -ne SHA256SUMS.txt | Sort-Object Name | ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } | Set-Content dist/SHA256SUMS.txt -Encoding ascii
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mom-launcher-release-candidate
+          path: dist/*
+          if-no-files-found: error
+      - name: Publish tagged release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: true

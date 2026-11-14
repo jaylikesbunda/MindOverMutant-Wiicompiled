@@ -1,0 +1,77 @@
+# NATIVE_MOM_HOT_FUNCTIONS_V1
+# One generated guest function per line, hottest first.
+#
+# Derived from this port's own profile, not from CotT.  A 90 s run of the staged
+# binary with the perf census on (NWII_PERF_CENSUS=1, NWII_PERF_PC_HISTOGRAM=1)
+# records, per guest poll site (every backward branch), the exact number of guest
+# instructions executed by the loop that ends there.  Each poll site is mapped to
+# its function with the dispatcher's own lookup (exact g_dispatch_overrides entry
+# first, else the first g_func_bounds range whose prefix-maximum end passes the
+# pc, both read out of export/main_output.cpp), and the per-function totals are
+# what is ranked here.  The list stops where the cumulative instruction share
+# reaches the requested coverage (90% by default).
+#
+# Regenerate with: python tools/mom_hot_functions.py <census.csv>
+OSUnlockMutex__os_a_OSMutex_o_80490644
+func_8041DFE4
+OSLockMutex__os_a_OSMutex_o_80490568
+func_8041DC6C
+func_8041DC94
+func_804379F8
+func_8043A8A8
+func_8041F5D4
+func_80493368
+DCFlushRange_8048B068
+__div2i_80426C64
+func_803BC39C
+func_80416370
+func_802F6ACC
+func_8031FB8C
+func_80416B2C
+func_802F8F40
+func_803081DC
+func_80416080
+func_80414DE4
+func_802F5200
+func_802F5390
+func_8030B514
+func_8041B3C4
+func_8041DC80
+func_80412EA8
+func_8031CC7C
+func_8030C5BC
+func_8030AC78
+func_8040EACC
+func_80149C1C
+func_802FA640
+func_804159B0
+func_804157C4
+func_80005F34
+DCInvalidateRange_8048B03C
+func_8041D4B0
+func_80417440
+func_8041B790
+func_8012C91C
+func_8041D098
+func_804117E4
+func_8030A46C
+func_800F707C
+func_80412F64
+func_80309290
+func_80434F74
+func_8029CD4C
+func_80419C34
+func_80438838
+func_802F41EC
+func_80410CB8
+func_8028A460
+func_802D4F8C
+func_80415C28
+func_802FACBC
+func_802FACC4
+__fill_mem_800061D0
+func_802B2938
+func_8012E1C0
+func_8029E1AC
+func_804168B0
+func_80483868

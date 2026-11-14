@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "game_id": "RC8P7D",
+  "dol_sha256": "9ac7b650b694005d86dd0e0fa66518ccd2eb855c33b815954f05a18c392d451b",
+  "function_entry": "0x8029E1AC",
+  "threshold_load_pc": "0x8029E23C",
+  "threshold_load_word": "0xC002B078",
+  "threshold_address": "0x805D8F98",
+  "threshold_bits": "0x3C888889",
+  "context_address": "0x8029E230",
+  "context_hex": "c01d0098ec20f82ad03d0098c002b078fc0100404180017cc002b080fc01004040810008d01d0098807d00944be58d7d4800117538800014",
+  "context_sha256": "4a5a1a21a0e776e33cbd3f1d19c2466179c3f6497ef9c718ef205f1cf3d54a14",
+  "generated_file": "export/output_35.cpp",
+  "original_expression": "ctx.mmu.read_f32(ctx.gpr[2] + -20360)",
+  "replacement_expression": "native_frame_limit::MinimumUpdateSeconds(ctx.mmu.read_f32(ctx.gpr[2] + -20360))",
+  "scope": "Replace only the threshold load at threshold_load_pc, never the same constant loaded at 0x8029E1F0 for debug stepping. Preserve all original instructions, counter updates, FP exception gates, elapsed time, accumulator and maximum-delta clamp.",
+  "runtime_policy": {
+    "fps_variable": "NWII_FPS_LIMIT",
+    "disable_variable": "NWII_NO_GUEST_FRAME_LIMIT",
+    "minimum_fps": 10,
+    "maximum_fps": 1000,
+    "unset_or_invalid": "Return original unchanged.",
+    "nonstandard_original_bits": "Return original unchanged.",
+    "valid_override": "Return float(1.0 / parsed_fps) only if original bits equal threshold_bits and disable_variable is absent."
+  },
+  "derivation": "Read MoM DOL instructions and generated code directly. At 0x8029E230 load accumulator [r29+152], add elapsed f31 at 0x8029E234, store accumulator at 0x8029E238, load 1/60 at 0x8029E23C, compare at 0x8029E240 and skip update on less-than at 0x8029E244. Following instructions retain the existing maximum-delta clamp. No CotT guest address is substituted."
+}
