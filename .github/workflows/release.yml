@@ -57,7 +57,7 @@ jobs:
           $env:PATH = "$pack/toolchain/mingw64/bin;$env:PATH"
           $env:CC = "$pack/toolchain/mingw64/bin/gcc.exe"
           $env:CXX = "$pack/toolchain/mingw64/bin/g++.exe"
-          & "$pack/toolchain/mingw64/bin/cmake.exe" -S "$pack/deps/sdl2-src" -B "$env:RUNNER_TEMP/sdl-configure" -G Ninja -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TEST_LIBRARY=OFF
+          & "$pack/toolchain/mingw64/bin/cmake.exe" -S "$pack/deps/sdl2-src" -B "$env:RUNNER_TEMP/sdl-configure" -G Ninja '-DCMAKE_POLICY_VERSION_MINIMUM=3.5' -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TEST_LIBRARY=OFF
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
