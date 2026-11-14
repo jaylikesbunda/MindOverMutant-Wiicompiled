@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 — release candidate
+## [0.1.0] - 2026-11-14
 
 - Native Windows build for the verified PAL Wii release, `RC8P7D`.
 - Disc preparation, persistent settings, controller layouts, save-state browser,

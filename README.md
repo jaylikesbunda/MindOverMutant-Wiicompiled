@@ -13,7 +13,7 @@
 > The launcher builds the game on your PC from your disc; no game code or data is distributed.
 
 The game's PowerPC code is translated to C++ with [NWiiRecomp](https://github.com/BlackLineInteractive/NWiiRecomp)
-and compiled with a high-level Wii runtime. Launcher `0.1.0` is a release candidate. See [CHANGELOG.md](CHANGELOG.md).
+and compiled with a high-level Wii runtime. Launcher `0.1.0`. See [CHANGELOG.md](CHANGELOG.md).
 
 | Release | Disc ID | Status |
 | --- | --- | --- |
@@ -56,7 +56,7 @@ or a minimum-performance guarantee. PGO profiles are specific to the generated c
 3. Select **Start build**. The first build takes tens of minutes.
 4. Select **Play**.
 
-Before the first release, installer candidates are available from manual runs of the [Release workflow](../../actions/workflows/release.yml).
+Development installer candidates are available from manual runs of the [Release workflow](../../actions/workflows/release.yml).
 
 Keys: **F1** save state, **F11** fullscreen. Saves, states, settings and shader caches are stored under
 `%APPDATA%/net.ghostesp.mom-launcher/profile/`.
