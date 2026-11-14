@@ -13,7 +13,7 @@
 > The launcher builds the game on your PC from your disc; no game code or data is distributed.
 
 The game's PowerPC code is translated to C++ with [NWiiRecomp](https://github.com/BlackLineInteractive/NWiiRecomp)
-and compiled with a high-level Wii runtime. Launcher `0.1.0`. See [CHANGELOG.md](CHANGELOG.md).
+and compiled with a high-level Wii runtime. Launcher `0.1.1`. See [CHANGELOG.md](CHANGELOG.md).
 
 | Release | Disc ID | Status |
 | --- | --- | --- |

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.1.1] - 2026-11-14
+
+- Removed the duplicate GPU vertex processing switch from launcher settings.
+
 ## [0.1.0] - 2026-11-14
 
 - Native Windows build for the verified PAL Wii release, `RC8P7D`.
