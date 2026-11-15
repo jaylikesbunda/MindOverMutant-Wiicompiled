@@ -8,6 +8,8 @@
   </p>
 </div>
 
+<a href="https://recomplauncher.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://recomplauncher.com/assets/press/launcher/badge-light.svg"><img alt="Get it on RecompLauncher" src="https://recomplauncher.com/assets/press/launcher/badge-dark.svg" height="48"></picture></a>
+
 > [!IMPORTANT]
 > The game is not included. You need your own Wii disc image of **Crash: Mind over Mutant**, PAL (`RC8P7D`).
 > The launcher builds the game on your PC from your disc; no game code or data is distributed.
@@ -21,6 +23,16 @@ and compiled with a high-level Wii runtime. Launcher `0.1.1`. See [CHANGELOG.md]
 | Other regions and revisions | — | Not supported |
 
 The launcher checks the executable's SHA-256 against [the supported disc hash](data/main.dol.sha256).
+
+## RecompLauncher
+
+Use the Windows x64 ZIP with [RecompLauncher](https://recomplauncher.com), or unzip it and run `mom-launcher.exe` yourself. The installer remains available. Pick your PAL Wii image (RVZ, ISO, GCZ or WBFS); setup verifies and extracts it, then builds the native game with the bundled offline toolchain. The first build can take 15 minutes or longer. No game files are included.
+
+RecompLauncher can change display, language and input settings, then start the game directly. Big Picture uses borderless fullscreen and the Classic gamepad layout for that session. Use MoMLauncher's Controls page for per-player remapping, and its Episodes and Save states pages for those features.
+
+The same profile is shared with the normal launcher: `%APPDATA%/net.ghostesp.mom-launcher`. Settings are in `settings.json`, game saves in `profile/nand`, and windowless setup/play logs in `profile/logs` (current and previous run). Save states stay in `profile/savestates`; they are not included in RecompLauncher's automatic save backups. The ZIP uses this per-user profile too.
+
+For scripts, `mom-launcher.exe --prepare --game "path/to/disc.rvz"` performs windowless setup; `--play --game "path/to/disc.rvz"` plays the prepared game and waits until it exits. Both accept `--data-dir "path/to/profile"` to use a separate profile. Run without these arguments to open the normal launcher.
 
 ## Features
 

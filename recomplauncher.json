@@ -1,0 +1,153 @@
+{
+  "$schema": "https://recomplauncher.com/schema/recomplauncher.json",
+  "format": 1,
+  "name": "Crash: Mind over Mutant — WiiComp",
+  "repo": "jaylikesbunda/MindOverMutant-Wiicompiled",
+  "game": {
+    "kind": "iso",
+    "label": "Your Crash: Mind over Mutant PAL Wii disc (RC8P7D): RVZ, ISO, GCZ or WBFS",
+    "check": { "ids": ["RC8P7D"] }
+  },
+  "start": {
+    "program": ["mom-launcher.exe"],
+    "args": ["--play", "--game", "{game}"]
+  },
+  "prepare": {
+    "program": ["mom-launcher.exe"],
+    "args": ["--prepare", "--game", "{game}"],
+    "label": "Verify and extract your disc, then build the native game locally",
+    "timeout": 5400
+  },
+  "config": [{
+    "format": "json",
+    "file": [{ "path": "{config}/net.ghostesp.mom-launcher/settings.json" }]
+  }],
+  "settings": [
+    {
+      "id": "resolution", "label": "Internal resolution", "group": "Display",
+      "help": "Scales the Wii's 640 x 528 rendering buffer. Window size and display aspect ratio are separate.",
+      "choices": [
+        { "label": "1x (640 x 528)", "set": { "resolution_scale": "1" } },
+        { "label": "2x (1280 x 1056)", "set": { "resolution_scale": "2" } },
+        { "label": "3x (1920 x 1584)", "set": { "resolution_scale": "3" } },
+        { "label": "4x (2560 x 2112)", "set": { "resolution_scale": "4" } }
+      ],
+      "defaults": { "resolution_scale": "2" }
+    },
+    {
+      "id": "window", "label": "Window", "group": "Display",
+      "help": "Big Picture uses borderless fullscreen for that session. F11 also toggles fullscreen in game.",
+      "choices": [
+        { "label": "Windowed", "set": { "display_mode": "\"windowed\"" } },
+        { "label": "Borderless fullscreen", "set": { "display_mode": "\"borderless\"" } }
+      ],
+      "defaults": { "display_mode": "\"windowed\"" }
+    },
+    {
+      "id": "vsync", "label": "VSync", "group": "Display",
+      "choices": [
+        { "label": "Off", "set": { "vsync": "false" } },
+        { "label": "On", "set": { "vsync": "true" } }
+      ], "defaults": { "vsync": "false" }
+    },
+    {
+      "id": "aspect", "label": "Aspect ratio", "group": "Display",
+      "choices": [
+        { "label": "16:9", "set": { "widescreen": "true" } },
+        { "label": "4:3", "set": { "widescreen": "false" } }
+      ], "defaults": { "widescreen": "true" }
+    },
+    {
+      "id": "filtering", "label": "Anisotropic filtering", "group": "Display",
+      "choices": [
+        { "label": "Off", "set": { "anisotropy": "1" } },
+        { "label": "2x", "set": { "anisotropy": "2" } },
+        { "label": "4x", "set": { "anisotropy": "4" } },
+        { "label": "8x", "set": { "anisotropy": "8" } },
+        { "label": "16x", "set": { "anisotropy": "16" } }
+      ], "defaults": { "anisotropy": "1" }
+    },
+    {
+      "id": "gpu_vertices", "label": "GPU vertex processing", "group": "Display",
+      "help": "Uses the faster GPU vertex path. Disable if you encounter rendering problems.",
+      "choices": [
+        { "label": "On", "set": { "gpu_vertices": "true" } },
+        { "label": "Off", "set": { "gpu_vertices": "false" } }
+      ], "defaults": { "gpu_vertices": "true" }
+    },
+    {
+      "id": "fps", "label": "Frame limit", "group": "Display",
+      "help": "Regional uses the PAL game's pacing. Higher limits may affect frame-dependent behavior.",
+      "choices": [
+        { "label": "Regional", "set": { "custom_fps": "null" } },
+        { "label": "60 FPS", "set": { "custom_fps": "60" } },
+        { "label": "120 FPS", "set": { "custom_fps": "120" } }
+      ], "defaults": { "custom_fps": "120" }
+    },
+    {
+      "id": "language", "label": "Language", "group": "Game",
+      "choices": [
+        { "label": "English", "set": { "language": "\"en\"" } },
+        { "label": "French", "set": { "language": "\"fr\"" } },
+        { "label": "German", "set": { "language": "\"de\"" } },
+        { "label": "Spanish", "set": { "language": "\"es\"" } },
+        { "label": "Italian", "set": { "language": "\"it\"" } },
+        { "label": "Dutch", "set": { "language": "\"nl\"" } }
+      ], "defaults": { "language": "\"en\"" }
+    },
+    {
+      "id": "input", "label": "Control scheme", "group": "Controls",
+      "help": "Big Picture selects the Classic gamepad layout for that session. Use MoMLauncher's Controls page for per-player remapping.",
+      "choices": [
+        { "label": "Keyboard and mouse", "set": { "input_mode": "6" } },
+        { "label": "Gamepad: Classic", "set": { "input_mode": "2" } },
+        { "label": "Gamepad: pointer assist", "set": { "input_mode": "3" } },
+        { "label": "Gamepad: full tilt (gyro)", "set": { "input_mode": "4" } }
+      ], "defaults": { "input_mode": "6" }
+    },
+    {
+      "id": "prompts", "label": "Button prompts", "group": "Controls",
+      "choices": [
+        { "label": "Automatic", "set": { "button_prompts": "\"auto\"" } },
+        { "label": "Xbox", "set": { "button_prompts": "\"xbox\"" } },
+        { "label": "PlayStation", "set": { "button_prompts": "\"playstation\"" } },
+        { "label": "Keyboard and mouse", "set": { "button_prompts": "\"keyboard\"" } },
+        { "label": "Original Wii", "set": { "button_prompts": "\"wii\"" } }
+      ], "defaults": { "button_prompts": "\"auto\"" }
+    },
+    {
+      "id": "gyro", "label": "Gyro sensitivity", "group": "Controls",
+      "slider": { "key": "gyro_sensitivity", "min": 0.1, "max": 3.0, "step": 0.1, "format": "%.1f" },
+      "defaults": { "gyro_sensitivity": "1.0" }
+    },
+    {
+      "id": "pointer", "label": "Pointer speed", "group": "Controls",
+      "slider": { "key": "pointer_speed", "min": 0.1, "max": 2.0, "step": 0.1, "format": "%.1f" },
+      "defaults": { "pointer_speed": "0.4" }
+    }
+  ],
+  "folders": {
+    "saves": [{ "path": "{config}/net.ghostesp.mom-launcher/profile/nand" }],
+    "logs": [{ "path": "{config}/net.ghostesp.mom-launcher/profile/logs" }],
+    "cache": [{ "path": "{config}/net.ghostesp.mom-launcher/cache" }]
+  },
+  "saves": ["{config}/net.ghostesp.mom-launcher/profile/nand"],
+  "actions": [
+    { "id": "saves", "label": "Open saves", "open": "saves" },
+    { "id": "logs", "label": "Open logs", "open": "logs" },
+    { "id": "shader_cache", "label": "Clear shader cache", "help": "Use if graphics look wrong after an update. Shaders will be rebuilt during play.", "clear": "cache/program-cache" }
+  ],
+  "exit_codes": {
+    "2": "Choose a readable PAL Wii disc image of Crash: Mind over Mutant (RC8P7D).",
+    "3": "Disc preparation failed or setup is required. Check the launcher log, then run setup again.",
+    "4": "The native build is missing, out of date or failed. Check the offline builder pack and launcher log, then run setup again.",
+    "5": "The game could not start. See the launcher log for details.",
+    "6": "The launcher could not write its log. Check permissions and free space in your profile folder."
+  },
+  "looks": {
+    "allowed": false,
+    "reason": "Filters cannot currently be installed alongside the locally built game.",
+    "graphics": "opengl",
+    "lines": 528
+  }
+}

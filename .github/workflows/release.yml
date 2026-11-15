@@ -67,6 +67,10 @@ jobs:
       - name: Test launcher against packaged builder
         working-directory: launcher/src-tauri
         run: cargo test --locked --release --lib
+      - name: Validate RecompLauncher manifest
+        run: |
+          python -m pip install jsonschema==4.26.0
+          python launcher/scripts/check_recomplauncher.py
       - name: Build installer
         working-directory: launcher/src-tauri
         run: cargo tauri build --config tauri.bundle.conf.json
@@ -79,6 +83,8 @@ jobs:
           if ($setups.Count -ne 1) { throw 'expected exactly one installer' }
           $setup = $setups[0]
           Copy-Item $setup.FullName 'dist/MoMLauncher-${{ steps.version.outputs.value }}-windows-x64-setup.exe'
+          python launcher/scripts/package_portable.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $installed = Start-Process -FilePath $setup.FullName -ArgumentList '/S' -WindowStyle Hidden -Wait -PassThru
           if ($installed.ExitCode -ne 0) { throw 'silent install failed' }
           $product = (Get-Content launcher/src-tauri/tauri.conf.json | ConvertFrom-Json).productName

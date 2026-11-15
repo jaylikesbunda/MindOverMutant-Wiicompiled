@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- RecompLauncher setup, settings and direct play through opt-in windowless commands.
+- Windows x64 ZIP releases with the offline builder and RecompLauncher manifest.
+- Current and previous setup/play logs in the shared profile folder.
+
 ## [0.1.1] - 2026-11-14
 
 - Removed the duplicate GPU vertex processing switch from launcher settings.
