@@ -33,6 +33,7 @@ mod releases;
 mod chapters;
 mod prompt_glyphs;
 mod prompts;
+mod recomplauncher;
 
 mod embedded {
     include!(concat!(env!("OUT_DIR"), "/embedded.rs"));
@@ -201,7 +202,7 @@ pub struct StateView {
 }
 
 fn data_dir(app: &AppHandle) -> PathBuf {
-    let dir = app.path().app_data_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let dir = recomplauncher::data_root().cloned().unwrap_or_else(|| app.path().app_data_dir().unwrap_or_else(|_| PathBuf::from(".")));
     let _ = fs::create_dir_all(&dir);
     dir
 }
@@ -1476,9 +1477,12 @@ fn spawn_gamepad_thread(pads: Arc<Mutex<Vec<PadInfo>>>, capture: Arc<Mutex<Captu
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let headless = recomplauncher::options_or_exit();
+    let mut context = tauri::generate_context!();
+    if headless.is_some() { context.config_mut().app.windows.clear(); }
     let pads = Arc::new(Mutex::new(Vec::new()));
     let capture = Arc::new(Mutex::new(Capture::default()));
-    spawn_gamepad_thread(pads.clone(), capture.clone());
+    if headless.is_none() { spawn_gamepad_thread(pads.clone(), capture.clone()); }
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(move |app| {
@@ -1494,7 +1498,11 @@ pub fn run() {
             });
             // Validate the builder pack once in the background so the first page refresh does not wait for it.
             let handle = app.handle().clone();
-            std::thread::spawn(move || { let _ = builder_available(&handle); });
+            if let Some(options) = headless {
+                recomplauncher::start(handle, options);
+            } else {
+                std::thread::spawn(move || { let _ = builder_available(&handle); });
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -1502,7 +1510,7 @@ pub fn run() {
             open_folder, reset_game_files, list_gamepads, list_soundtrack, get_track_wav, export_tracks,
             save_controls, begin_capture, poll_capture, cancel_capture, list_states, delete_state, get_logo, list_chapters, set_start_direct
         ])
-        .run(tauri::generate_context!())
+        .run(context)
         .expect("error while running the launcher");
 }
 
