@@ -2253,7 +2253,7 @@ dependencies = [
 
 [[package]]
 name = "mom-launcher"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "color_quant",
  "gilrs",

@@ -26,7 +26,7 @@ jobs:
           python -m pip install jsonschema==4.26.0
           python launcher/scripts/check_recomplauncher.py
       - name: Test builder execution
-        run: python -m unittest discover -s tools/tests -p test_builder_execution.py
+        run: python -m unittest discover -s tools/tests -p 'test_*.py'
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:

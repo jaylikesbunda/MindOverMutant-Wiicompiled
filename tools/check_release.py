@@ -28,6 +28,8 @@ def main():
     cargo=tomllib.loads((root/'launcher/src-tauri/Cargo.toml').read_text())['package']['version']
     if version!=cargo:errors.append('launcher Cargo/Tauri versions differ')
     validate(root)
+    from release_pgo import validate_bundle
+    validate_bundle(root/'reference/pgo/mom-pal.json')
     if errors:raise SystemExit('Publication blocked:\n  '+'\n  '.join(sorted(set(errors))))
     print(f'Publication inputs passed: {len(paths)} files; no disc/runtime binaries or local play state')
 

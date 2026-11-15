@@ -44,11 +44,11 @@ fn source_hash(path:&str,data:&[u8])->String {
  format!("{:x}",Sha256::digest(normalized))
 }
 #[derive(Serialize,Deserialize)]
-pub struct RuntimeBuild {pub builder_revision:String,#[serde(default)] pub builder_inputs:String,pub dol_sha256:String,pub executable_sha256:String}
+pub struct RuntimeBuild {pub builder_revision:String,#[serde(default)] pub builder_inputs:String,pub dol_sha256:String,pub executable_sha256:String,#[serde(default)] pub pgo:String}
 pub fn runtime_matches(exe:&Path,dol_sha:&str)->bool {
  if !exe.is_file(){return false;}
  fs::read(exe.with_file_name("runtime-build.json")).ok().and_then(|b|serde_json::from_slice::<RuntimeBuild>(&b).ok())
-  .map(|m|m.builder_revision==revision() && m.builder_inputs==inputs_digest() && m.dol_sha256==dol_sha &&
+  .map(|m|m.builder_revision==revision() && m.builder_inputs==inputs_digest() && m.dol_sha256==dol_sha && m.pgo=="use" &&
        executable_matches(exe,&m.executable_sha256)).unwrap_or(false)
 }
 fn executable_matches(exe:&Path,expected:&str)->bool {
@@ -66,10 +66,12 @@ fn executable_matches(exe:&Path,expected:&str)->bool {
   let dir=std::env::temp_dir().join(format!("crash-runtime-identity-{}",std::process::id()));fs::create_dir_all(&dir).unwrap();
   let exe=dir.join("CrashNative.exe");fs::write(&exe,b"fixture").unwrap();assert!(!runtime_matches(&exe,"disc-a"));
   let marker=exe.with_file_name("runtime-build.json");
-  let mut meta=RuntimeBuild{builder_revision:"old".into(),builder_inputs:inputs_digest(),dol_sha256:"disc-a".into(),executable_sha256:format!("{:x}",Sha256::digest(b"fixture"))};
+  let mut meta=RuntimeBuild{builder_revision:"old".into(),builder_inputs:inputs_digest(),dol_sha256:"disc-a".into(),executable_sha256:format!("{:x}",Sha256::digest(b"fixture")),pgo:"use".into()};
   fs::write(&marker,serde_json::to_vec(&meta).unwrap()).unwrap();assert!(!runtime_matches(&exe,"disc-a"));
   meta.builder_revision=revision();fs::write(&marker,serde_json::to_vec(&meta).unwrap()).unwrap();
   assert!(runtime_matches(&exe,"disc-a"));assert!(!runtime_matches(&exe,"disc-b"));
+  meta.pgo="gen".into();fs::write(&marker,serde_json::to_vec(&meta).unwrap()).unwrap();assert!(!runtime_matches(&exe,"disc-a"));
+  meta.pgo="use".into();fs::write(&marker,serde_json::to_vec(&meta).unwrap()).unwrap();
   fs::write(&exe,b"modified executable").unwrap();assert!(!runtime_matches(&exe,"disc-a"));
   // Same revision string, different builder inputs: out of date.
   meta.builder_inputs="0".repeat(64);fs::write(&marker,serde_json::to_vec(&meta).unwrap()).unwrap();assert!(!runtime_matches(&exe,"disc-a"));

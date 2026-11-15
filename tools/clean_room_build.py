@@ -10,7 +10,7 @@ import argparse, hashlib, io, json, os, re, shutil, subprocess, sys, tarfile
 ROOT=Path(__file__).resolve().parents[1]
 PIN='595f176f1d24cc54ff2e8389feed12d7fb553cc2'
 POSTGEN=[
- 'fix_guest_compile_flags.py','fix_cache_range_loops_mom.py',
+ 'fix_guest_compile_flags.py','fix_prune_entry_cases_mom.py','fix_cache_range_loops_mom.py',
  'fix_inst_count_batch_mom.py','fix_dispatcher_o2_mom.py',
  'fix_dispatch_hot_cache_mom.py','fix_poll_due_mom.py',
  'fix_guest_memory_lane_mom.py','fix_guest_calls_mom.py',
@@ -76,6 +76,7 @@ def main():
     ap.add_argument('--reuse-deps',action='store_true')
     ap.add_argument('--generate-only',action='store_true')
     ap.add_argument('--expected-builder-revision')
+    ap.add_argument('--pgo', choices=('use', 'gen'), default='use', help='use the shipped counters, or instrument a maintainer training build')
     args=ap.parse_args()
     if args.jobs<1:ap.error('--jobs must be positive')
     progress(1,'Verifying builder and disc')
@@ -128,9 +129,12 @@ def main():
             else:run([sys.executable,work/'tools/stages'/stage],work,env)
         (generated/'.mom-staged').write_text(digest)
     progress(60,'Guest source ready')
+    from release_pgo import configure, verify_guest_performance
+    verify_guest_performance(generated)
+    build=dest/'storage/toolchain'
+    configure(generated,build,args.pgo)
     if args.generate_only:
         print('Generation and guest staging complete: '+str(generated),flush=True);return
-    build=dest/'storage/toolchain'
     run(['cmake','-S',generated,'-B',build,'-G','Ninja','-DCMAKE_BUILD_TYPE=Release',*deps],work,env,'Configuring the native game',(60,63))
     run(['cmake','--build',build,'--target','MindOverMutant','--parallel',args.jobs],work,env,'Compiling the native game',(63,98))
     progress(99,'Preparing the game to launch')
@@ -138,7 +142,7 @@ def main():
     # Runtime DLLs travel with the locally built game; the launcher needs no toolchain on PATH.
     copy_runtime_dlls(build,env)
     info=dict(builder_revision=identity['revision'],builder_inputs=digest,dol_sha256=dol_sha,
-              executable_sha256=hashlib.sha256(target.read_bytes()).hexdigest())
+              executable_sha256=hashlib.sha256(target.read_bytes()).hexdigest(),pgo=args.pgo)
     (build/'runtime-build.json').write_text(json.dumps(info,indent=2))
     progress(100,'Ready to play')
     print('Runtime ready: '+str(target),flush=True)

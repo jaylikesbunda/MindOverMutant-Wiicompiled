@@ -24,7 +24,7 @@ jobs:
       - name: Check publication inputs
         run: python tools/check_release.py
       - name: Test builder execution
-        run: python -m unittest discover -s tools/tests -p test_builder_execution.py
+        run: python -m unittest discover -s tools/tests -p 'test_*.py'
       - name: Validate release version
         id: version
         shell: pwsh

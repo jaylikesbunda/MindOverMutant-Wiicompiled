@@ -2,7 +2,7 @@
 from pathlib import Path
 import argparse, hashlib, json
 ROOT=Path(__file__).resolve().parents[1]
-REVISION='2026.11.14-3'
+REVISION='2026.11.15-1'
 
 def paths(root):
     for name in ('recomp_config.toml','config.toml','patches/mom-release-runtime.patch','data/main.dol.sha256'):

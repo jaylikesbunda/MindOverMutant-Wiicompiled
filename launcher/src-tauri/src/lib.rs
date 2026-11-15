@@ -255,8 +255,8 @@ fn runtime_exe_path(app: &AppHandle) -> PathBuf {
 
 fn load_settings(app: &AppHandle) -> Settings {
     let mut s: Settings = fs::read_to_string(settings_path(app)).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default();
-    // MoM: there is no builder pack, so the runtime is the one built in the MoM repo (export/build/MindOverMutant.exe).
-    // Use it when no runtime is chosen, or when the chosen one has gone away.
+    // Development checkouts can reuse export/build/MindOverMutant.exe when no runtime is selected.
+    // Installed releases build the game from the offline pack.
     if s.runtime_override.as_ref().map(|p| !Path::new(p).is_file()).unwrap_or(true) {
         if let Some(exe) = mom_repo_runtime() { s.runtime_override = Some(exe.display().to_string()); }
     }
@@ -970,7 +970,7 @@ async fn build_runtime(app: AppHandle, state: State<'_, AppState>) -> Result<(),
         cmd.arg(&script).arg("--dest").arg(&dest).arg("--dol").arg(&dol)
             .arg("--resume")
             .arg("--expected-builder-revision").arg(builder_identity::revision())
-            .arg("--jobs").arg(std::thread::available_parallelism().map(|n| n.get().min(10).to_string()).unwrap_or_else(|_| "4".into())).arg("--reuse-deps")
+            .arg("--jobs").arg(std::thread::available_parallelism().map(|n| n.get().min(5).to_string()).unwrap_or_else(|_| "4".into())).arg("--reuse-deps")
             .current_dir(root.parent().unwrap()).stdout(Stdio::piped()).stderr(Stdio::piped()).stdin(Stdio::null());
         if let Some(p) = &pack { cmd.arg("--deps").arg(p.join("deps")); }
         #[cfg(windows)]

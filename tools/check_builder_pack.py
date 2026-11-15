@@ -7,6 +7,8 @@ from clean_room_build import PIN
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('pack',type=Path,nargs='?',default=ROOT/'launcher/src-tauri/builder-pack');args=ap.parse_args()
     pack=args.pack.resolve();source=pack/'native-builder';validate(source)
+    from release_pgo import validate_bundle
+    validate_bundle(source/'reference/pgo/mom-pal.json')
     if json.loads((source/'builder-revision.json').read_text())!=json.loads((ROOT/'builder-revision.json').read_text()):
         raise SystemExit('pack source identity differs from this release')
     assert (source/'vendor/NWiiRecomp/PINNED_COMMIT').read_text().strip()==PIN

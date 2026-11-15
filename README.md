@@ -10,10 +10,10 @@
 
 > [!IMPORTANT]
 > The game is not included. You need your own Wii disc image of **Crash: Mind over Mutant**, PAL (`RC8P7D`).
-> The launcher builds the game on your PC from your disc; no game code or data is distributed.
+> The launcher builds the game on your PC from your disc; no game code or disc assets are distributed.
 
 The game's PowerPC code is translated to C++ with [NWiiRecomp](https://github.com/BlackLineInteractive/NWiiRecomp)
-and compiled with a high-level Wii runtime. Launcher `0.1.1`. See [CHANGELOG.md](CHANGELOG.md).
+and compiled with a high-level Wii runtime. Launcher `0.1.2`. See [CHANGELOG.md](CHANGELOG.md).
 
 | Release | Disc ID | Status |
 | --- | --- | --- |
@@ -45,9 +45,19 @@ For scripts, `mom-launcher.exe --prepare --game "path/to/disc.rvz"` performs win
 
 ## Performance
 
-The busy gameplay scene measured roughly 75–79 FPS from a fresh source build and about 92 FPS with a locally trained PGO build,
-using GPU vertices and persistent uploads. These are separate development runs with two-second up/down movement, not a paired benchmark
-or a minimum-performance guarantee. PGO profiles are specific to the generated code and are not included in builder packs.
+The source builder applies the guest and runtime performance fixes, including entry-switch pruning, batched instruction counting,
+GPU vertices, persistent uploads and PGO. Builder packs include [trained execution counters](reference/pgo/README.md); game code and assets still come from your disc.
+The launcher requires a rebuild when those inputs change, so an older unprofiled build cannot be reused as the current release.
+
+A comparison on a Ryzen 5 3600 and RTX 3060 used the same busy save, GPU vertices, persistent uploads and a 120 FPS cap:
+
+| Build | Average FPS |
+| --- | --- |
+| Existing PGO development build | 87.7 |
+| Packaged source builder with PGO | 89.1 |
+
+Each 40-second run used two-second up/down strokes and discarded the first 12 FPS samples. These are single-run results;
+performance varies by hardware and scene. Earlier source-builder runs measured roughly 75–79 FPS before the pipeline fixes, in separate tests.
 
 ## Requirements
 
@@ -82,7 +92,7 @@ Audio playback has been checked, but saving during an active mix and loading tha
 <details>
 <summary><b>Building from source</b></summary>
 
-Needs Python 3.12+, Git, WinLibs GCC 16 POSIX/UCRT with CMake and Ninja, and Rust/Tauri 2 for the launcher.
+Needs Python 3.12+, Git, WinLibs GCC 16.1.0 POSIX/UCRT with CMake and Ninja, and Rust/Tauri 2 for the launcher.
 Put `mingw64/bin` on PATH. See [vendor/README.md](vendor/README.md) for pinned dependencies.
 
 ```powershell
@@ -94,6 +104,8 @@ Extract your disc separately, with `<game>/sys/main.dol` present. Build the game
 
 ```powershell
 python tools/clean_room_build.py --dest build/local --dol '<game>/sys/main.dol' --jobs 5
+$env:NWII_GPU_VERTEX = '1'
+$env:NWII_PERSISTENT_UPLOAD = '1'
 build/local/storage/toolchain/CrashNative.exe '<game>' config.toml
 ```
 

@@ -1,7 +1,10 @@
 # Changelog
 
-## Unreleased
+## [0.1.2] - 2026-11-15
 
+- Source builds now include entry-switch pruning and instruction-count batching, matching the optimized development guest code.
+- Portable GCC execution-counter profiles enable PGO in the offline builder. Stale sources and incompatible compilers fail the build; training builds cannot be adopted as release builds.
+- Launcher builds use at most five compiler jobs to limit PGO build memory use. Existing game builds need rebuilding after the update.
 - RecompLauncher setup, settings and direct play through opt-in windowless commands.
 - Windows x64 ZIP releases with the offline builder and RecompLauncher manifest.
 - Current and previous setup/play logs in the shared profile folder.

@@ -92,7 +92,7 @@ def run_state(state: Path, index: int, args: argparse.Namespace) -> bool:
                NWII_LOAD_STATE=str(state), NWII_WPAD_LIVE=str(STICK), NWII_PROGRAM_CACHE_DIR=str(PROGRAM_CACHE),
                NWII_PGO_DUMP_TRIGGER=str(TRIGGER))
     log = (LOGS / (state.stem + '.log')).open('w')
-    proc = subprocess.Popen([str(EXE), 'dump', 'config.toml'], cwd=ROOT, env=env,
+    proc = subprocess.Popen([str(EXE), str(args.game_dir.resolve()), str(args.config.resolve())], cwd=args.profile_dir.resolve(), env=env,
                             stdout=log, stderr=subprocess.STDOUT)
     ok = False
     try:
@@ -123,6 +123,7 @@ def run_state(state: Path, index: int, args: argparse.Namespace) -> bool:
 
 
 def main() -> None:
+    global EXE, BUILD_NINJA, OBJ, LOGS, TRIGGER, STICK, PROGRAM_CACHE
     ap = argparse.ArgumentParser(description='Train MoM GCC profiles over several save states (see module docstring).')
     ap.add_argument('--states', nargs='+', help='explicit .nwstate paths (overrides --glob)')
     ap.add_argument('--glob', default=r'C:\ctb\mom-states\2026111*.nwstate', help='save-state glob')
@@ -131,7 +132,20 @@ def main() -> None:
     ap.add_argument('--dump-timeout', type=float, default=120.0, help='seconds to wait for the dump marker')
     ap.add_argument('--clean', action='store_true', help='delete existing .gcda files before training')
     ap.add_argument('--dry-run', action='store_true', help='print the plan and stick scripts; launch nothing')
+    ap.add_argument('--exe', type=Path, default=EXE, help='instrumented game executable')
+    ap.add_argument('--build-dir', type=Path, default=BUILD_NINJA.parent, help='CMake build directory for that executable')
+    ap.add_argument('--game-dir', type=Path, default=ROOT / 'dump', help='prepared disc directory')
+    ap.add_argument('--config', type=Path, default=ROOT / 'config.toml')
+    ap.add_argument('--profile-dir', type=Path, default=ROOT, help='working directory containing the training NAND')
+    ap.add_argument('--log-dir', type=Path, default=LOGS)
     args = ap.parse_args()
+    EXE = args.exe.resolve()
+    BUILD_NINJA = args.build_dir.resolve() / 'build.ninja'
+    OBJ = args.build_dir.resolve() / 'CMakeFiles/MindOverMutant.dir'
+    LOGS = args.log_dir.resolve()
+    TRIGGER = LOGS / 'dump-trigger.txt'
+    STICK = LOGS / 'stick.txt'
+    PROGRAM_CACHE = LOGS / 'program-cache'
 
     states = [Path(s) for s in args.states] if args.states else [Path(p) for p in sorted(glob.glob(args.glob))]
     if not states:
@@ -163,7 +177,7 @@ def main() -> None:
 
     count = sum(1 for _ in OBJ.rglob('*.gcda'))
     size = sum(p.stat().st_size for p in OBJ.rglob('*.gcda'))
-    print('.gcda files under %s: %d (%d bytes)' % (OBJ.relative_to(ROOT), count, size))
+    print('.gcda files under %s: %d (%d bytes)' % (OBJ, count, size))
 
 
 if __name__ == '__main__':

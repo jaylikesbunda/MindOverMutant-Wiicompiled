@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "revision": "2026.11.14-3",
+  "revision": "2026.11.15-1",
   "required_inputs": {
     "recomp_config.toml": "b5cca633413ab135e0deabc5753267f34a50a8b26274cb754c132ff6cd37441a",
     "config.toml": "6b47676d80fbebd4985adb7ca130b9c9fd8dce7cedec722a7a3a7a8388bb11e5",
@@ -14,11 +14,11 @@
     "tools/apply_perf_stages.py": "e06910619b94a076fc2cd21edcf9161e282500df416bbccdd6a9909f3262d6f6",
     "tools/apply_stages.py": "462811aaedd65d46454cdee3012b40e87c942503789836185d6003d3fd9d236f",
     "tools/boot_diff.py": "09c16fcb0ad5124cc771fe9ff0285bd8fda066a2dc772708945cfda12345d3f7",
-    "tools/builder_revision.py": "0f3980b2179c49f6e0ab9fc4715410f982c555344ea10af4d5c496738bfbd26d",
-    "tools/check_builder_pack.py": "e393d58e00fd5fbc10a580a6825c602077dbb33a64ca8df31a3c4902ae05f14f",
+    "tools/builder_revision.py": "2c873f92a3bd5978e208192ff1a0b1f39da06e079a1aa495c0e93d626a708513",
+    "tools/check_builder_pack.py": "a5e1ff4df8797bd9d8d0869e301004d3c88105f05baa88bb0b63848c7420d082",
     "tools/check_live_prompts_mom.py": "3fb0fff20f7429e6bf9027eaec8d4a6dc3a375df6902eb523afdbf92d8ebb6b5",
-    "tools/check_release.py": "6c10aed3cb1732b9b365223e2fad83e9c17aeda7de1fde552daf7602b1dfee28",
-    "tools/clean_room_build.py": "abb86fdad89563d54210dfafb8659a4178a3c559c0d88e29463c79f35736075b",
+    "tools/check_release.py": "a6e66aa6e45e948b8b734565571e9a3221f515d2cfc6131d45048609a9984ac7",
+    "tools/clean_room_build.py": "15f945834ec0bfaa7a939df537028bcb070e6279a85cababefdcb87dcf4bee44",
     "tools/compare_generated.py": "d1de095946d5d4a9679ee19261a04d28dcf5a9c3760a63bd76db01038dc10051",
     "tools/game_emit.cpp": "0e410964009ed037c6021ccf5eb2eaf0422af9337c779c5bf4a4ff9d873340b9",
     "tools/gap_functions.py": "c3ddbf95fb32ffaa29832d9477e9cfac125215da9957a1f34a0e2b634ed69e01",
@@ -30,10 +30,11 @@
     "tools/mom_perf_log.py": "1a28ee4be1326f6e179541e475ebd4d2b9f8efb78c0cb4a5ddfdb71b8d4efb42",
     "tools/package_source.py": "03c47bdc296437b86e9ed4054abd3aac37c9847650d278e57eb2da7aa683d195",
     "tools/pgo_mom.py": "72391d3fb2cffff49128835e6465243b68f079c8746f288a8862eeb08e19b1c2",
-    "tools/pgo_train_mom.py": "2db04919a8ee46626c9b1511374ea7eb470467e43c17e74db9a6a609e2c10169",
+    "tools/pgo_train_mom.py": "45cfe9776f072f7ef3d3b671fc1d0a56bd2a9d40b6914e8d09dea31f7bb16a68",
     "tools/promote_diff_harness.cpp": "fc0329f7da065f47416071b4370306c98acba27312bbc2b3c56b41354d176dbb",
     "tools/promote_diff_harness.py": "80e10dd6d7bf3b735818443b900f897d441b28d41db455b77dac3198421f73ba",
     "tools/refresh_release_sources.py": "834d95b3a89989ced6863ec31cdbece32fd4a3aeab7b78aca6b749bbc68ea159",
+    "tools/release_pgo.py": "4aca87b399fe71848c3affea974fc83af2c23a77df4e48cc5a23c8ce4e0d4cfe",
     "tools/release_postgen.py": "f7961d8f8b0dc9dd1c218bc8180cae0216cc7d884720992d93606999c010b12f",
     "tools/source_patch.py": "eb6f49a7347d8c91c2c458b55a429794a743cab244942938168e9db560a724d4",
     "tools/stages/01_fix_normal_scale_mom.py": "6b00af00dba92d66a42800c6bb7738a60f164307841d91f47eb15c6a3ec6c4fd",
@@ -220,6 +221,7 @@
     "tools/tests/run_upload_gl_smoke.py": "64783df1212c62e10cf6b78b16cc64bec2f407722ee00b3bbad85b309ec18eb5",
     "tools/tests/shader_lane.cpp": "59cda82b6b9c4112c53fa6ec76b4b2e0880117044b586e24ffb2efcda22e0f6a",
     "tools/tests/test_builder_execution.py": "6372acd1e11d1ebc60b4c786ed1b144afafdb1eaa11eb4bb82614d438ec0957b",
+    "tools/tests/test_release_pgo.py": "235c0a3911671fe9c80ad877f4ba3ac666b2f7bbccdd68f4f2513964b8961b74",
     "tools/tests/upload_gl_smoke.cpp": "bac42102384771adf0b1d95c290834cea0b50cd8710d09407670804adfcf7ddc",
     "tools/tests/used_texture_mask.cpp": "1a135235f9fc508b59bf3423016ba1411ca31a944f750097c289bdb4631cdc24",
     "overlays/dsp_ax.inc": "5da05be9ff8d3c15e1f66c9fc19008b1f8b56469de4f253a86b0a89cf13e64e6",
@@ -291,6 +293,8 @@
     "reference/dolphin-ax/UCodes.cpp": "eb05907c21145c43785d699bf64e26da435daebce0c0da0adede8ca8acd5d16a",
     "reference/dolphin-ax/UCodes.h": "26f688f58298db6c2e907d117104e2e93fbfa6a4328959d263e68cfd9a3d2b81",
     "reference/dolphin-ax/UPSTREAM_COMMIT.txt": "10b653675a3bdfa470beb7e2b16a1e4b3905aab635824ee9a635bf04a3ddb020",
-    "reference/mom-frame-gate.json": "20b7aa32b66fa639a1f202af41fe10ae0836b47db29626365ca2f7bd4085c36a"
+    "reference/mom-frame-gate.json": "20b7aa32b66fa639a1f202af41fe10ae0836b47db29626365ca2f7bd4085c36a",
+    "reference/pgo/mom-pal.json": "ae2ffffc574db443766c854dc51b592b5af0e024a0062d2443108e8b35686b3e",
+    "reference/pgo/README.md": "e93ce83f574fa26ecf72c644e76d926ffa93464d6970480d488fc3854774763e"
   }
 }
