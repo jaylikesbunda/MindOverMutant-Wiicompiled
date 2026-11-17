@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="launcher/ui/images/wiicomp.png" width="280" alt="WiiComp">
   <h1>Crash: Mind over Mutant</h1>
   <p>A static recompilation of the Wii version into a native Windows game.</p>
   <p>
